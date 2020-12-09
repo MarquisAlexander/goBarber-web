@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useContext } from 'react';
+import React, { useRef, useCallback, useContext, useState } from 'react';
 import { FiLogIn, FiMail } from 'react-icons/fi';
 import { FormHandles } from '@unform/core';
 import { Form } from '@unform/web';
@@ -14,6 +14,8 @@ import logoImg from '../../assets/logo.svg';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 
+import api from '../../services/api';
+
 import { Container, Content, AnimationContainer, Background } from './styles';
 
 interface ForgotPasswordFormData {
@@ -21,12 +23,15 @@ interface ForgotPasswordFormData {
 }
 
 const ForgotPassword: React.FC = () => {
+    const [loading, setLoading] = useState(false);
     const formRef = useRef<FormHandles>(null);
 
     const { addToast } = useToast();
 
     const handleSubmit = useCallback(async (data: ForgotPasswordFormData) => {
         try {
+            setLoading(true);
+
             formRef.current?.setErrors({});
 
             const schema = Yup.object().shape({
@@ -50,6 +55,16 @@ const ForgotPassword: React.FC = () => {
 
             //recuperação de senha
 
+            api.post('/password/forgot', {
+                email: data.email,
+            });
+
+            addToast({
+                type: 'success',
+                title: 'E-mail de recuperação enviado',
+                description: 'Enviamos um e-mail para confirmar a recuperação de senha, cheque sua caixa de entrada',   
+            })
+
             // history.push('/dashboard');
 
             addToast({
@@ -57,6 +72,8 @@ const ForgotPassword: React.FC = () => {
                 title: 'Error na recuperação de senha',
                 description: 'Ocorreu um erro ao tentar realizar a recuperação de senha, tente novamente',
             });
+        } finally {
+            setLoading(true);
         }
     }, [addToast],
     );
