@@ -39,7 +39,7 @@ const SignIn: React.FC = () => {
 
             const schema = Yup.object().shape({
                 password: Yup.string().required('Senha obrigatória'),
-                password_confirmation: Yup.string().oneOf([Yup.ref('password'), null],
+                password_confirmation: Yup.string().oneOf([Yup.ref('password'), ''],
                 'Confirmação incorreta',
                 ),
             });
