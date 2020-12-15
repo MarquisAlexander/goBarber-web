@@ -1,5 +1,5 @@
 import React, { useCallback, useRef } from 'react';
-import { FiArrowLeft, FiMail, FiLock, FiUser } from 'react-icons/fi';
+import { FiArrowLeft, FiMail, FiLock, FiUser, FiCamera } from 'react-icons/fi';
 import { FormHandles } from '@unform/core';
 import { Form } from '@unform/web';
 import * as Yup from 'yup';
@@ -8,7 +8,8 @@ import { Link, useHistory } from 'react-router-dom';
 
 import api from '../../services/api';
 
-import { useToast, useAuth } from '../../hooks/toast';
+import { useToast } from '../../hooks/toast';
+import { useAuth } from '../../hooks/auth';
 
 import Input from '../../components/Input';
 import Button from '../../components/Button';
@@ -69,13 +70,30 @@ const Profile: React.FC = () => {
         }
     }, [addToast, history]);
 
+    const handleAvatarChange = useCallback(() => {}, []);
     return (
         <Container>
+            
+            <header>
+                    <div>
+                        <Link to="/dashboard">
+                            <FiArrowLeft />
+                        </Link>
+                    </div>
+            </header>
             <Content>
-                    <Form ref={formRef} onSubmit={handleSubmit}>
-
+                    <Form ref={formRef} initialData={{
+                        name: user.name,
+                        email: user.email,
+                    }} onSubmit={handleSubmit}>
+                
                         <AvatarInput>
                             <img src={user.avatar_url} alt={user.name}/>
+                            <label htmlFor="avatar">
+                                <FiCamera />
+                                <input type="file" id="avatar" onChange={handleAvatarChange}/>
+                            </label>
+                            
                         </AvatarInput>
 
                         <h1>Meu Perfil</h1>
