@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, ChangeEvent } from 'react';
 import { FiArrowLeft, FiMail, FiLock, FiUser, FiCamera } from 'react-icons/fi';
 import { FormHandles } from '@unform/core';
 import { Form } from '@unform/web';
@@ -20,6 +20,8 @@ interface ProfileFormData {
     name: string;
     email: string;
     password: string;
+    old_password: string;
+    password_confirmation: string;
 }
 
 const Profile: React.FC = () => {
@@ -27,7 +29,7 @@ const Profile: React.FC = () => {
     const { addToast } = useToast();
     const history = useHistory();
 
-    const { user } = useAuth();
+    const { user, updateUser } = useAuth();
 
 
     const handleSubmit = useCallback(async (data: ProfileFormData) => {
@@ -37,21 +39,48 @@ const Profile: React.FC = () => {
             const schema = Yup.object().shape({
                 name: Yup.string().required('Nome obrigatório'),
                 email: Yup.string().required('E-mail obrigatório').email('Digite um e-mail válido'),
-                password: Yup.string().min(6, 'No mínimo 6 dígitos'),
+                old_password: Yup.string(),
+                password: Yup.string().when('old_password', {
+                    is: val => !!val.length,
+                    then: Yup.string().required('Campo obrigatório'),
+                    otherwise: Yup.string(),
+                }),
+                password_confirmation: Yup.string().when('old_password', {
+                    is: val => !!val.length,
+                    then: Yup.string().required('Campo obrigatório'),
+                    otherwise: Yup.string(),
+                })
+                .oneOf(
+                    [Yup.ref('password'), null],
+                    'Confirmação incorreta',
+                ),
             });
 
             await schema.validate(data, {
                 abortEarly: false,
             });
 
-            await api.post('/users', data);
+            const { name, email, old_password, password, password_confirmation } = data;
 
-            history.push('/');
+            const formData = Object.assign({
+                name,
+                email,
+            }, old_password ? {
+                old_password,
+                password,
+                password_confirmation,
+            }: {});
+
+            const response = await api.put('/profile', formData);
+
+            updateUser(response.data);
+
+            history.push('/dashboard');
 
             addToast({
                 type: 'success',
-                title: 'Cadastro realizado',
-                description: 'Você já pode fazer seu logon no GoBarber!',
+                title: 'Perfil atualizado',
+                description: 'Sua informações do perfil foram atualizada com sucesso',
             })
         } catch (err) {
             if (err instanceof Yup.ValidationError) {
@@ -65,12 +94,29 @@ const Profile: React.FC = () => {
             addToast({
                 type: 'error',
                 title: 'Error no cadastro',
-                description: 'Ocorreu um erro ao fazer o cadastro, tente novamente.',
+                description: 'Ocorreu um erro ao atualizar seu perfil, tente novamente.',
             });
         }
     }, [addToast, history]);
 
-    const handleAvatarChange = useCallback(() => {}, []);
+    const handleAvatarChange = useCallback((e:ChangeEvent<HTMLInputElement>) => {
+
+        if (e.target.files) {
+            const data = new FormData();
+
+            data.append('avatar',e.target.files[0]);
+
+            api.patch('/users/avatar', data).then((response) => {
+                updateUser(response.data);
+                
+                addToast({
+                    type:'success',
+                    title: 'Avatar atualizado!',
+                });
+            });
+        }
+    }, [addToast, updateUser]);
+
     return (
         <Container>
             
